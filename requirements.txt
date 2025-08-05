@@ -1,6 +1,0 @@
-numpy~=1.24.1
-loguru~=0.7.3
-PyYAML~=6.0.2
-tqdm~=4.67.1
-torch~=1.13.1+cu117
-spconv-cu117~=2.3.6
