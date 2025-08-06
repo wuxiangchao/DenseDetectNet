@@ -87,7 +87,7 @@ def create_o3d_box(box_param, label, score):
 def main():
     config_path = 'configs/d2net_kitti.yaml'
     # 使用当前训练好的模型即可
-    model_path = 'checkpoints/d2net_stage1_epoch_50.pth'
+    model_path = 'checkpoints/d2net_stage1_epoch_65.pth'
     sample_id = '000008' 
     print(f"正在对验证集的样本进行推理: {sample_id}")
 
