@@ -95,13 +95,13 @@ $L_{total}=λ_{det} \dot L_{det}+λ_{dense} \dot L_{dense}$
   * **回归损失** : 采用复合损失来提升定位精度。
     * **BEV IoU 损失** : 对预测框和真值框在鸟瞰图下的IoU进行监督。我们采用旋转框的轴对齐包围盒来近似计算IoU，以保证稳定性和效率。
       $L_{IoU}=1-IoU_{BEV}$
-    * **Z轴与高度L1损失** : 对`z`坐标和物体高度`h`使用L1损失进行直接监督。
-      $L_{Z,H}=\left\|z_{pred} - z_{gt} \right\| + \left\| h_{pred} - h_{gt} \right\|$
-    * 总回归损失由这两部分加权构成：
+    * **Z轴与高度L1损失** : 对`z`坐标和物体高度`h`使用L1损失进行直接监督。    
+    $L_{Z,H}=\left\|z_{pred} - z_{gt} \right\| + \left\| h_{pred} - h_{gt} \right\|$
+    * 总回归损失由这两部分加权构成：   
     $L_{reg}=\omega_{iou} \dot L_{IoU} + \omega_{z,h} \dot L_{Z,H}$
 * **4.2 稠密化损失 ($L_{dense}$)** :
   * 使用 **Chamfer Distance** 来衡量预测的点云片和真实的局部偏移点云片之间的差异。    
-  $L_{CD}(S_1,S_2)=\sum_{x \in S_1} \min_第一次提交，已完成点云稠密化和目标检测功能。{y \in S_2} \left\|x-y\right\|_2^2 + \sum_{y \in S_2} \min_{x \in S_1} \left\|x-y\right\|_2^2 $
+  $L_{CD}(S_1,S_2)=\sum \limits_{x \in S_1} \min_{y \in S_2} \left\|x-y\right\|_2^2 + \sum \limits_{y \in S_2} \min_{x \in S_1} \left\|x-y\right\|_2^2 $
 
     这里的 $S_1$ 是预测的局部偏移， $S_2$ 是真实的局部偏移。
 
