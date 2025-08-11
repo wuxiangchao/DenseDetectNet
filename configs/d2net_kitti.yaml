@@ -20,7 +20,6 @@ model:
 
   # 2D BEV骨干网 (类FPN结构)
   bev_backbone:
-    # [核心修改] 输入通道 = C * Z = 128 * 3 = 384
     in_channels: 384
     layer_channels: [128, 256]
     upsample_channels: [128, 128]

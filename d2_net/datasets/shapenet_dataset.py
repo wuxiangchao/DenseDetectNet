@@ -7,13 +7,14 @@
 import os
 import torch
 from torch.utils.data import Dataset
-import open3d as o3d
 import numpy as np
 from tqdm import tqdm
+import trimesh
 
 class ShapeNetDataset(Dataset):
     """
     用于加载和处理ShapeNet汽车模型的数据集类。
+    [核心修改] 使用 trimesh 替代 open3d 以获得更强的鲁棒性。
     """
     def __init__(self, root_dir, num_points=2048, split='train'):
         self.root_dir = root_dir
@@ -46,31 +47,30 @@ class ShapeNetDataset(Dataset):
     def __getitem__(self, idx):
         obj_path = self.obj_paths[idx]
         
-        # 使用Open3D加载.obj文件并采样点云
         try:
-            mesh = o3d.io.read_triangle_mesh(obj_path)
+            # 使用 trimesh 加载 .obj 文件
+            mesh = trimesh.load(obj_path, force='mesh')
+            
             # 从网格表面均匀采样点
-            pcd = mesh.sample_points_uniformly(number_of_points=self.num_points)
-            points = np.asarray(pcd.points, dtype=np.float32)
+            points, _ = trimesh.sample.sample_surface(mesh, self.num_points)
+            points = points.astype(np.float32)
 
             # 数据增强：随机旋转
             if np.random.rand() > 0.5:
-                # 绕Z轴随机旋转
                 angle = np.random.uniform(-np.pi, np.pi)
-                rot_mat = np.array([[np.cos(angle), -np.sin(angle), 0],
-                                    [np.sin(angle), np.cos(angle), 0],
-                                    [0, 0, 1]], dtype=np.float32)
-                points = points @ rot_mat.T
+                rot_mat = trimesh.transformations.rotation_matrix(angle, [0, 0, 1])
+                points = trimesh.transform_points(points, rot_mat)
             
-            return torch.from_numpy(points)
+            return torch.from_numpy(points.astype(np.float32))
         except Exception as e:
             print(f"Warning: Could not load or process {obj_path}. Skipping. Error: {e}")
             # 返回一个虚拟数据，在collate_fn中会被过滤掉
-            return torch.zeros((self.num_points, 3), dtype=torch.float32)
+            return None # 返回None，方便过滤
 
 def shapenet_collate_fn(batch):
-    # 过滤掉加载失败的数据
-    batch = [data for data in batch if data.shape[0] == 2048]
+    # 过滤掉加载失败的数据 (返回None的项)
+    batch = [data for data in batch if data is not None]
     if not batch:
         return None
     return torch.stack(batch, dim=0)
+
