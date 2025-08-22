@@ -1,0 +1,84 @@
+# -*- coding: utf-8 -*-
+# @Author: WUXIANGCHAO
+# @Date: 2025-07-13 22:15:30
+# @Last Modified by: WUXIANGCHAO
+# @Last Modified time: 2025-08-21 13:10:00
+
+# 1. Data Configuration
+data:
+  root_path: "./data/kitti"
+  class_names: ["Car", "Pedestrian", "Cyclist"]
+  point_cloud_range: [-50, -40, -3, 50, 40, 1]
+  voxel_size: [0.05, 0.05, 0.1]
+
+  mean_size:
+    Car: [3.9, 1.6, 1.56]
+    Pedestrian: [0.8, 0.6, 1.73]
+    Cyclis: [1.76, 0.6, 1.73]
+
+  # 为8个回归目标定义均值和标准差 (根据KITTI数据集统计得出)
+  # 顺序: x_offset, y_offset, z, log(l/l_a), log(w/w_a), log(h/h_a), sin(yaw), cos(yaw)
+  reg_targets_mean: [0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  reg_targets_std: [0.5, 0.5, 1.0, 0.2, 0.2, 0.3, 1.0, 1.0]
+
+  max_points_per_voxel: 5
+  max_number_of_voxels: 16000
+  test_max_number_of_voxels: 40000
+
+# 2. Model Configuration
+model:
+  input_channels: 4
+
+  shape_autoencoder:
+    latent_dim: 256
+    num_points: 4096
+    encoder_path: "checkpoints_ae/shapenet_encoder_epoch_300.pth"
+    decoder_path: "checkpoints_ae/shapenet_decoder_epoch_300.pth"
+
+  bev_backbone:
+    in_channels: 384
+    layer_channels: [128, 256]
+    upsample_channels: [128, 128]
+    output_channels: 256
+
+  completion_head:
+    in_channels: 256
+    latent_dim: 256
+
+  densification_head:
+    in_channels: 16
+    num_points_to_predict: 10
+
+  detection_head:
+    in_channels: 256
+    tasks:
+      - class_names: ["Car"]
+      - class_names: ["Pedestrian", "Cyclist"]
+
+# 3. Loss Configuration
+loss:
+  dense_weight: 0.25
+  completion_weight: 0.05
+  detect_weight: 1.0
+
+  focal_loss_alpha: 0.25
+  focal_loss_gamma: 2.0
+  
+  # 提高回归损失权重以平衡巨大的heatmap_loss
+  l1_loss_weight: 10.0
+  iou_loss_weight: 15.0
+
+  heatmap_loss_weight: 1.0
+
+# 4. Training Configuration
+training:
+  epochs: 200
+  batch_size: 8
+  # 降低学习率以增加训练初期稳定性
+  lr: 0.005 
+  steps_per_epoch: 2
+  optimizer: "AdamW"
+  lr_scheduler: "OneCycleLR"
+  # 保持一个较强的梯度裁剪值
+  grad_norm_clip: 10 
+  num_workers: 8
